@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ארבע בשורה</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#e6ebf2;--ink:#18202c;--muted:#566174;--board:#1d47a6;--hole:#e6ebf2;--p1:#d93a3a;--p2:#f2b928;--btn:#18202c;--btnt:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141c;--ink:#eef1f6;--muted:#9aa5b6;--board:#2a5bd0;--hole:#0f141c;--btn:#eef1f6;--btnt:#0f141c}}
+:root[data-theme="dark"]{--bg:#0f141c;--ink:#eef1f6;--muted:#9aa5b6;--board:#2a5bd0;--hole:#0f141c;--btn:#eef1f6;--btnt:#0f141c}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px 16px}
+h1{margin:0;font-size:2rem;font-weight:800;letter-spacing:-.01em}
+#st{margin:0;min-height:1.6em;font-size:1.1rem;font-weight:600;color:var(--muted)}
+#board{direction:ltr;width:100%;max-width:420px;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px;background:var(--board);border-radius:18px;overflow:hidden}
+.col{display:grid;grid-template-rows:repeat(6,auto);gap:6px;padding:0;margin:0;border:0;background:none;cursor:pointer;border-radius:999px;-webkit-tap-highlight-color:transparent}
+.col:focus-visible{outline:3px solid var(--p2);outline-offset:1px}
+.col:hover .cell:not(.p1):not(.p2){background:color-mix(in srgb,var(--hole) 85%,var(--p2))}
+.cell{display:block;aspect-ratio:1;border-radius:50%;background:var(--hole)}
+.p1{background:var(--p1)!important;animation:drop .35s ease-in}
+.p2{background:var(--p2)!important;animation:drop .35s ease-in;box-shadow:inset 0 0 0 4px color-mix(in srgb,var(--p2) 70%,#000)}
+.w{outline:3px solid var(--ink);outline-offset:-3px}
+@keyframes drop{from{transform:translateY(-450%)}}
+@media (prefers-reduced-motion:reduce){.p1,.p2{animation:none}}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+select,button.new{font:inherit;font-weight:600;padding:10px 16px;border-radius:12px;border:2px solid var(--ink);background:var(--bg);color:var(--ink)}
+button.new{background:var(--btn);color:var(--btnt);cursor:pointer}
+.key{display:flex;gap:14px;font-size:.9rem;color:var(--muted)}
+.key i{display:inline-block;width:.9em;height:.9em;border-radius:50%;vertical-align:-.1em;margin-inline-end:.35em}
+</style>
+</head>
+<body>
+<h1>ארבע בשורה</h1>
+<p id="st" role="status" aria-live="polite"></p>
+<div id="board"></div>
+<div class="key"><span><i style="background:var(--p1)"></i>אתה</span><span><i style="background:var(--p2)"></i>המחשב</span></div>
+<div class="bar">
+<select id="lv" aria-label="רמת קושי"><option value="1">קל</option><option value="3" selected>בינוני</option><option value="5">קשה</option></select>
+<button class="new" id="nw">משחק חדש</button>
+</div>
+<script>
+const R=6,C=7,ord=[3,2,4,1,5,0,6],dirs=[[0,1],[1,0],[1,1],[1,-1]];
+let b,turn,over,level=3;
+const $=s=>document.querySelector(s),B=$('#board');
+const say=t=>$('#st').textContent=t;
+for(let c=0;c<C;c++){const col=document.createElement('button');col.className='col';col.setAttribute('aria-label','עמודה '+(c+1));col.onclick=()=>play(c);for(let r=0;r<R;r++){const s=document.createElement('span');s.className='cell';col.appendChild(s)}B.appendChild(col)}
+const cell=(r,c)=>B.children[c].children[r];
+function reset(){b=Array.from({length:R},()=>Array(C).fill(0));turn=1;over=false;document.querySelectorAll('.cell').forEach(x=>x.className='cell');say('התור שלך')}
+function drop(c,p){for(let r=R-1;r>=0;r--)if(!b[r][c]){b[r][c]=p;return r}}
+function win(p){for(let r=0;r<R;r++)for(let c=0;c<C;c++)for(const[d,e]of dirs){const cs=[];for(let k=0;k<4;k++){const y=r+d*k,x=c+e*k;if(y<0||y>=R||x<0||x>=C||b[y][x]!==p)break;cs.push([y,x])}if(cs.length==4)return cs}return null}
+function score(){let s=0;for(let r=0;r<R;r++){if(b[r][3]==2)s+=3;for(let c=0;c<C;c++)for(const[d,e]of dirs){let a=0,h=0,out=false;for(let k=0;k<4;k++){const y=r+d*k,x=c+e*k;if(y<0||y>=R||x<0||x>=C){out=true;break}const v=b[y][x];if(v==2)a++;else if(v==1)h++}if(out)continue;if(a&&!h)s+=a==3?5:a==2?2:0;else if(h&&!a)s-=h==3?6:h==2?2:0}}return s}
+function mm(d,a,be,mx){
+if(win(2))return 1e5+d;if(win(1))return -1e5-d;
+const ms=ord.filter(c=>!b[0][c]);if(!ms.length)return 0;if(!d)return score();
+let best=mx?-Infinity:Infinity;
+for(const c of ms){const r=drop(c,mx?2:1),v=mm(d-1,a,be,!mx);b[r][c]=0;
+if(mx){best=Math.max(best,v);a=Math.max(a,v)}else{best=Math.min(best,v);be=Math.min(be,v)}
+if(a>=be)break}
+return best}
+function ai(){const ms=ord.filter(c=>!b[0][c]);
+if(level==1&&Math.random()<.4)return ms[Math.random()*ms.length|0];
+let bc=ms[0],bv=-Infinity;
+for(const c of ms){const r=drop(c,2),v=mm(level-1,-Infinity,Infinity,false);b[r][c]=0;if(v>bv){bv=v;bc=c}}
+return bc}
+function move(c,p){const r=drop(c,p);cell(r,c).classList.add('p'+p);const w=win(p);
+if(w){over=true;w.forEach(([y,x])=>cell(y,x).classList.add('w'));say(p==1?'ניצחת! 🎉':'המחשב ניצח. רוצה לנסות שוב?')}
+else if(b[0].every(v=>v)){over=true;say('תיקו')}}
+function play(c){if(over||turn!=1||b[0][c])return;move(c,1);
+if(!over){turn=2;say('המחשב חושב…');setTimeout(()=>{move(ai(),2);if(!over){turn=1;say('התור שלך')}},400)}}
+$('#lv').onchange=e=>{level=+e.target.value;reset()};
+$('#nw').onclick=reset;
+reset();
+</script>
+</body>
+</html>
