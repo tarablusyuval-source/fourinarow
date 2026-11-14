@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lights Out</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #171e29; --ink: #e8eef6; --muted: #8b9ab0;
+    --off: #232d3b; --on: #ffd23f; --glow: rgba(255, 210, 63, .55); --accent: #3ddc97;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: radial-gradient(ellipse at 50% 0%, #1a2433 0%, var(--bg) 60%) fixed;
+    color: var(--ink);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    display: flex; justify-content: center; padding: 20px 14px 32px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  main { width: min(460px, 100%); }
+  h1 { font-size: 2.6rem; line-height: 1; margin: 0 0 6px; letter-spacing: -1px; }
+  .sub { color: var(--muted); margin: 0 0 18px; font-size: .95rem; line-height: 1.4; }
+  .levels { display: flex; gap: 8px; margin-bottom: 14px; }
+  button {
+    font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 10px 14px;
+    background: var(--panel); color: var(--ink); cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: #05261a; }
+  button[aria-pressed="true"] { background: var(--on); color: #2b2100; }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .levels button { flex: 1; }
+  .stats { display: flex; gap: 8px; margin-bottom: 14px; }
+  .stat { flex: 1; background: var(--panel); border-radius: 8px; padding: 8px 12px; }
+  .stat small { display: block; color: var(--muted); font-size: .72rem; }
+  .stat b { font-size: 1.3rem; }
+  #board {
+    display: grid; gap: 10px; padding: 12px; background: var(--panel);
+    border-radius: 14px; width: 100%; aspect-ratio: 1; position: relative;
+  }
+  .bulb {
+    border-radius: 50%; border: 0; padding: 0; background: var(--off);
+    transition: background 120ms, box-shadow 120ms, transform 80ms;
+  }
+  .bulb:active { transform: scale(.94); }
+  .bulb.on { background: var(--on); box-shadow: 0 0 22px 4px var(--glow); }
+  .bulb.hint { outline: 3px dashed var(--accent); outline-offset: 3px; }
+  .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .actions button { flex: 1; }
+  #status { min-height: 1.6em; margin: 14px 2px 0; color: var(--accent); font-weight: 700; }
+  p.help { color: var(--muted); font-size: .9rem; line-height: 1.5; margin: 6px 2px 0; }
+  @media (prefers-reduced-motion: reduce) { .bulb { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Lights Out</h1>
+  <p class="sub">Tapping a light flips it and its neighbors. Turn every light off.</p>
+
+  <div class="levels" id="levels">
+    <button data-n="3" aria-pressed="false">Easy 3×3</button>
+    <button data-n="4" aria-pressed="false">Medium 4×4</button>
+    <button data-n="5" aria-pressed="true">Hard 5×5</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><small>Moves</small><b id="moves">0</b></div>
+    <div class="stat"><small>Best</small><b id="best">-</b></div>
+  </div>
+
+  <div id="board" aria-label="Lights grid"></div>
+
+  <div class="actions">
+    <button id="hint">Hint</button>
+    <button id="restart">Restart</button>
+    <button id="new" class="primary">New puzzle</button>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <p class="help">Fewer moves beat your best. Hint points at a light that is part of a solution.</p>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const boardEl = $('board'), movesEl = $('moves'), bestEl = $('best'), statusEl = $('status');
+  let n = 5, lights, start, solution, moves, solved;
+
+  const key = () => 'lightsOutBest' + n;
+  const loadBest = () => { try { return +localStorage.getItem(key()) || 0; } catch (e) { return 0; } };
+  const saveBest = v => { try { localStorage.setItem(key(), v); } catch (e) {} };
+
+  function press(arr, i) {
+    const x = i % n, y = Math.floor(i / n);
+    arr[i] = !arr[i];
+    if (x > 0) arr[i - 1] = !arr[i - 1];
+    if (x < n - 1) arr[i + 1] = !arr[i + 1];
+    if (y > 0) arr[i - n] = !arr[i - n];
+    if (y < n - 1) arr[i + n] = !arr[i + n];
+  }
+
+  // Build a puzzle by pressing random cells on a dark board, so it is always solvable.
+  function generate() {
+    let arr, sol;
+    do {
+      arr = Array(n * n).fill(false);
+      sol = Array(n * n).fill(false);
+      for (let i = 0; i < n * n; i++) {
+        if (Math.random() < 0.5) { sol[i] = true; press(arr, i); }
+      }
+    } while (!arr.some(Boolean));
+    start = arr.slice();
+    solution = sol;
+  }
+
+  function load() {
+    lights = start.slice();
+    solution = solution.slice();
+    moves = 0; solved = false;
+    statusEl.textContent = '';
+    bestEl.textContent = loadBest() || '-';
+    render();
+  }
+
+  function build() {
+    boardEl.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+    boardEl.style.gridTemplateRows = `repeat(${n}, 1fr)`;
+    boardEl.innerHTML = '';
+    for (let i = 0; i < n * n; i++) {
+      const b = document.createElement('button');
+      b.className = 'bulb';
+      b.setAttribute('aria-label', `Light ${Math.floor(i / n) + 1}, ${i % n + 1}`);
+      b.addEventListener('click', () => tap(i));
+      boardEl.appendChild(b);
+    }
+  }
+
+  function render() {
+    [...boardEl.children].forEach((b, i) => {
+      b.classList.toggle('on', lights[i]);
+      b.classList.remove('hint');
+    });
+    movesEl.textContent = moves;
+  }
+
+  function tap(i) {
+    if (solved) return;
+    press(lights, i);
+    solution[i] = !solution[i]; // pressing a solution cell uses it up; pressing another adds it
+    moves++;
+    render();
+    if (!lights.some(Boolean)) win();
+  }
+
+  function win() {
+    solved = true;
+    const best = loadBest();
+    if (!best || moves < best) { saveBest(moves); bestEl.textContent = moves; statusEl.textContent = `Solved in ${moves}. New best!`; }
+    else statusEl.textContent = `Solved in ${moves} moves.`;
+  }
+
+  function hint() {
+    if (solved) return;
+    const opts = solution.map((s, i) => s ? i : -1).filter(i => i >= 0);
+    if (!opts.length) return;
+    const i = opts[Math.floor(Math.random() * opts.length)];
+    boardEl.children[i].classList.add('hint');
+  }
+
+  function newPuzzle() { generate(); load(); }
+
+  function setSize(size) {
+    n = size;
+    document.querySelectorAll('#levels button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.n === n)));
+    build(); newPuzzle();
+  }
+
+  document.querySelectorAll('#levels button').forEach(b => b.addEventListener('click', () => setSize(+b.dataset.n)));
+  $('hint').onclick = hint;
+  $('new').onclick = newPuzzle;
+  $('restart').onclick = () => {
+    // Recompute the solution for the starting board: replay is just the same puzzle.
+    solution = recomputeSolution();
+    load();
+  };
+
+  // Restart keeps the same puzzle; the stored solution drifts as the player moves, so rebuild it
+  // by solving the starting board with Gaussian elimination over GF(2).
+  function recomputeSolution() {
+    const size = n * n;
+    const A = Array.from({ length: size }, () => Array(size + 1).fill(0));
+    for (let i = 0; i < size; i++) {
+      const t = Array(size).fill(false); press(t, i);
+      t.forEach((v, j) => { if (v) A[j][i] = 1; });
+      A[i][size] = start[i] ? 1 : 0;
+    }
+    const pivotCol = [];
+    let row = 0;
+    for (let c = 0; c < size && row < size; c++) {
+      let p = -1;
+      for (let r = row; r < size; r++) if (A[r][c]) { p = r; break; }
+      if (p < 0) continue;
+      [A[row], A[p]] = [A[p], A[row]];
+      for (let r = 0; r < size; r++) if (r !== row && A[r][c]) for (let k = c; k <= size; k++) A[r][k] ^= A[row][k];
+      pivotCol[row] = c; row++;
+    }
+    const sol = Array(size).fill(false);
+    for (let r = 0; r < row; r++) sol[pivotCol[r]] = !!A[r][size];
+    return sol;
+  }
+
+  build();
+  newPuzzle();
+})();
+</script>
+</body>
+</html>
