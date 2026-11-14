@@ -1,276 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>2048</title>
+<title>ארבע בשורה</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap">
 <style>
-  :root {
-    --bg: #e9eef2; --ink: #16222e; --muted: #5b6b7a;
-    --board: #2b3a49; --cell: #3a4b5c; --panel: #ffffff;
-    --accent: #e4572e;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #0f1720; --ink: #e8eef4; --muted: #8fa0b0; --board: #1c2833; --cell: #26343f; --panel: #1c2833; }
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; min-height: 100%; }
-  body {
-    background: var(--bg); color: var(--ink);
-    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
-    display: flex; justify-content: center; padding: 20px 14px 32px;
-    touch-action: none; -webkit-user-select: none; user-select: none;
-  }
-  main { width: min(460px, 100%); }
-  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-  h1 { font-size: 3.4rem; line-height: 1; margin: 0; letter-spacing: -2px; font-weight: 800; }
-  .scores { display: flex; gap: 8px; }
-  .score { background: var(--panel); border-radius: 8px; padding: 6px 14px; text-align: center; min-width: 76px; }
-  .score small { display: block; font-size: .7rem; color: var(--muted); }
-  .score b { font-size: 1.2rem; }
-  .bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; color: var(--muted); font-size: .95rem; }
-  button {
-    font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 10px 16px;
-    background: var(--accent); color: #fff; cursor: pointer;
-  }
-  button.quiet { background: var(--panel); color: var(--ink); }
-  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-  button:disabled { opacity: .4; cursor: default; }
-  .btns { display: flex; gap: 8px; }
-  #board {
-    position: relative; background: var(--board); border-radius: 12px; padding: 10px;
-    aspect-ratio: 1; width: 100%;
-    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px;
-  }
-  .cell { background: var(--cell); border-radius: 8px; }
-  #tiles { position: absolute; inset: 10px; }
-  .tile {
-    position: absolute; width: calc((100% - 30px) / 4); height: calc((100% - 30px) / 4);
-    border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: clamp(1.4rem, 8vw, 2.4rem);
-    transition: transform 110ms ease-out;
-  }
-  .tile.big { font-size: clamp(1.1rem, 6.4vw, 1.9rem); }
-  .tile.huge { font-size: clamp(.9rem, 5vw, 1.5rem); }
-  .tile.new { animation: pop 160ms ease-out; }
-  .tile.merge { animation: bump 160ms ease-out; }
-  @keyframes pop { from { scale: .3; opacity: 0; } }
-  @keyframes bump { 50% { scale: 1.15; } }
-  @media (prefers-reduced-motion: reduce) { .tile, .tile.new, .tile.merge { transition: none; animation: none; } }
-  #overlay {
-    position: absolute; inset: 0; border-radius: 12px; display: none; flex-direction: column;
-    align-items: center; justify-content: center; gap: 14px; text-align: center;
-    background: color-mix(in srgb, var(--board) 88%, transparent); color: #fff;
-  }
-  #overlay.show { display: flex; }
-  #overlay h2 { margin: 0; font-size: 2.2rem; }
-  p.help { color: var(--muted); font-size: .9rem; margin: 16px 2px 0; line-height: 1.5; }
-  /* tile colors: cool-to-hot ramp */
-  .v2    { background: #d8e6f0; color: #26394a; }
-  .v4    { background: #b4d3e6; color: #1f3547; }
-  .v8    { background: #6fb7c9; color: #0f2a35; }
-  .v16   { background: #2fa39a; color: #fff; }
-  .v32   { background: #3a8f5c; color: #fff; }
-  .v64   { background: #b5a62f; color: #2a2600; }
-  .v128  { background: #f0b429; color: #3a2a00; }
-  .v256  { background: #f08a29; color: #2e1700; }
-  .v512  { background: #e4572e; color: #fff; }
-  .v1024 { background: #c2255c; color: #fff; }
-  .v2048 { background: #7b2cbf; color: #fff; box-shadow: 0 0 0 3px #ffd166; }
-  .vmax  { background: #111; color: #ffd166; }
+:root{--bg:#e6ebf2;--ink:#18202c;--muted:#566174;--board:#1d47a6;--hole:#e6ebf2;--p1:#d93a3a;--p2:#f2b928;--btn:#18202c;--btnt:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141c;--ink:#eef1f6;--muted:#9aa5b6;--board:#2a5bd0;--hole:#0f141c;--btn:#eef1f6;--btnt:#0f141c}}
+:root[data-theme="dark"]{--bg:#0f141c;--ink:#eef1f6;--muted:#9aa5b6;--board:#2a5bd0;--hole:#0f141c;--btn:#eef1f6;--btnt:#0f141c}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px 16px}
+h1{margin:0;font-size:2rem;font-weight:800;letter-spacing:-.01em}
+#st{margin:0;min-height:1.6em;font-size:1.1rem;font-weight:600;color:var(--muted)}
+#board{direction:ltr;width:100%;max-width:420px;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px;background:var(--board);border-radius:18px;overflow:hidden}
+.col{display:grid;grid-template-rows:repeat(6,auto);gap:6px;padding:0;margin:0;border:0;background:none;cursor:pointer;border-radius:999px;-webkit-tap-highlight-color:transparent}
+.col:focus-visible{outline:3px solid var(--p2);outline-offset:1px}
+.col:hover .cell:not(.p1):not(.p2){background:color-mix(in srgb,var(--hole) 85%,var(--p2))}
+.cell{display:block;aspect-ratio:1;border-radius:50%;background:var(--hole)}
+.p1{background:var(--p1)!important;animation:drop .35s ease-in}
+.p2{background:var(--p2)!important;animation:drop .35s ease-in;box-shadow:inset 0 0 0 4px color-mix(in srgb,var(--p2) 70%,#000)}
+.w{outline:3px solid var(--ink);outline-offset:-3px}
+@keyframes drop{from{transform:translateY(-450%)}}
+@media (prefers-reduced-motion:reduce){.p1,.p2{animation:none}}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+select,button.new{font:inherit;font-weight:600;padding:10px 16px;border-radius:12px;border:2px solid var(--ink);background:var(--bg);color:var(--ink)}
+button.new{background:var(--btn);color:var(--btnt);cursor:pointer}
+.key{display:flex;gap:14px;font-size:.9rem;color:var(--muted)}
+.key i{display:inline-block;width:.9em;height:.9em;border-radius:50%;vertical-align:-.1em;margin-inline-end:.35em}
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>2048</h1>
-    <div class="scores">
-      <div class="score"><small>Score</small><b id="score">0</b></div>
-      <div class="score"><small>Best</small><b id="best">0</b></div>
-    </div>
-  </header>
-  <div class="bar">
-    <span>Merge tiles to reach 2048.</span>
-    <div class="btns">
-      <button class="quiet" id="undo" aria-label="Undo last move">Undo</button>
-      <button id="new">New game</button>
-    </div>
-  </div>
-  <div id="board" aria-label="Game board">
-    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
-    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
-    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
-    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
-    <div id="tiles"></div>
-    <div id="overlay" role="alertdialog">
-      <h2 id="msg"></h2>
-      <div class="btns">
-        <button id="keep" class="quiet" hidden>Keep going</button>
-        <button id="again">Try again</button>
-      </div>
-    </div>
-  </div>
-  <p class="help">Arrow keys, WASD, or swipe to slide. Equal tiles merge when they touch.</p>
-</main>
-
+<a href="2048.html">2048</a>
+<h1>ארבע בשורה</h1>
+<p id="st" role="status" aria-live="polite"></p>
+<div id="board"></div>
+<div class="key"><span><i style="background:var(--p1)"></i>אתה</span><span><i style="background:var(--p2)"></i>המחשב</span></div>
+<div class="bar">
+<select id="lv" aria-label="רמת קושי"><option value="1">קל</option><option value="3" selected>בינוני</option><option value="5">קשה</option></select>
+<button class="new" id="nw">משחק חדש</button>
+</div>
 <script>
-(() => {
-  const N = 4, GAP = 10;
-  const $ = id => document.getElementById(id);
-  const tilesEl = $('tiles'), scoreEl = $('score'), bestEl = $('best');
-  const overlay = $('overlay'), msg = $('msg'), keepBtn = $('keep'), undoBtn = $('undo');
-
-  let grid, score, best = 0, prev = null, won = false, keepPlaying = false, nextId = 1, over = false;
-
-  try { best = +localStorage.getItem('best2048') || 0; } catch (e) {}
-  bestEl.textContent = best;
-
-  const empty = () => Array.from({ length: N }, () => Array(N).fill(null));
-  const clone = g => g.map(r => r.map(t => t && { ...t }));
-
-  function addRandom() {
-    const free = [];
-    grid.forEach((r, y) => r.forEach((t, x) => { if (!t) free.push([x, y]); }));
-    if (!free.length) return;
-    const [x, y] = free[Math.floor(Math.random() * free.length)];
-    grid[y][x] = { id: nextId++, v: Math.random() < 0.9 ? 2 : 4, isNew: true };
-  }
-
-  function start() {
-    grid = empty(); score = 0; prev = null; won = false; keepPlaying = false; over = false;
-    addRandom(); addRandom();
-    overlay.classList.remove('show');
-    render();
-  }
-
-  // Slide one line toward index 0; returns new line, score gained, whether anything changed.
-  function slide(line) {
-    const tiles = line.filter(Boolean);
-    const out = []; let gained = 0;
-    for (let i = 0; i < tiles.length; i++) {
-      const a = tiles[i], b = tiles[i + 1];
-      if (b && a.v === b.v) {
-        out.push({ id: a.id, v: a.v * 2, merged: true });
-        gained += a.v * 2; i++;
-      } else out.push({ id: a.id, v: a.v });
-    }
-    while (out.length < N) out.push(null);
-    const changed = out.some((t, i) => (t ? t.id : 0) !== (line[i] ? line[i].id : 0) || (t && line[i] && t.v !== line[i].v));
-    return { out, gained, changed };
-  }
-
-  function move(dir) {
-    if (over) return;
-    const before = clone(grid);
-    let moved = false, gained = 0;
-    const next = empty();
-    for (let k = 0; k < N; k++) {
-      // Build the line so index 0 is the side tiles slide toward.
-      const coords = [];
-      for (let i = 0; i < N; i++) {
-        if (dir === 'left') coords.push([i, k]);
-        if (dir === 'right') coords.push([N - 1 - i, k]);
-        if (dir === 'up') coords.push([k, i]);
-        if (dir === 'down') coords.push([k, N - 1 - i]);
-      }
-      const line = coords.map(([x, y]) => grid[y][x]);
-      const r = slide(line);
-      if (r.changed) moved = true;
-      gained += r.gained;
-      coords.forEach(([x, y], i) => { next[y][x] = r.out[i]; });
-    }
-    if (!moved) return;
-    prev = { grid: before, score };
-    grid = next; score += gained;
-    addRandom();
-    if (score > best) { best = score; try { localStorage.setItem('best2048', best); } catch (e) {} }
-    render();
-    check();
-  }
-
-  function check() {
-    const flat = grid.flat().filter(Boolean);
-    if (!won && !keepPlaying && flat.some(t => t.v >= 2048)) {
-      won = true; showOverlay('You made 2048!', true); return;
-    }
-    if (flat.length === N * N) {
-      let can = false;
-      for (let y = 0; y < N && !can; y++) for (let x = 0; x < N; x++) {
-        const t = grid[y][x];
-        if ((x + 1 < N && grid[y][x + 1].v === t.v) || (y + 1 < N && grid[y + 1][x].v === t.v)) { can = true; break; }
-      }
-      if (!can) { over = true; showOverlay('No moves left', false); }
-    }
-  }
-
-  function showOverlay(text, canKeep) {
-    msg.textContent = text;
-    keepBtn.hidden = !canKeep;
-    overlay.classList.add('show');
-  }
-
-  const els = new Map();
-  function render() {
-    scoreEl.textContent = score; bestEl.textContent = best;
-    undoBtn.disabled = !prev;
-    const seen = new Set();
-    const size = tilesEl.clientWidth;
-    const cellPx = (size - GAP * (N - 1)) / N;
-    grid.forEach((row, y) => row.forEach((t, x) => {
-      if (!t) return;
-      seen.add(t.id);
-      let el = els.get(t.id);
-      const fresh = !el;
-      if (fresh) {
-        el = document.createElement('div');
-        tilesEl.appendChild(el); els.set(t.id, el);
-      }
-      el.className = 'tile v' + (t.v > 2048 ? 'max' : t.v) + (t.v >= 1024 ? ' big' : '') + (t.v >= 16384 ? ' huge' : '');
-      el.textContent = t.v;
-      el.style.transform = `translate(${x * (cellPx + GAP)}px, ${y * (cellPx + GAP)}px)`;
-      if (fresh && t.isNew) el.classList.add('new');
-      if (t.merged) { void el.offsetWidth; el.classList.add('merge'); }
-      t.isNew = false; t.merged = false;
-    }));
-    for (const [id, el] of els) if (!seen.has(id)) { el.remove(); els.delete(id); }
-  }
-
-  function undo() {
-    if (!prev || over) return;
-    // Clear all tile elements so positions rebuild cleanly.
-    els.forEach(el => el.remove()); els.clear();
-    grid = prev.grid; score = prev.score; prev = null;
-    overlay.classList.remove('show');
-    render();
-  }
-
-  const keys = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', a: 'left', d: 'right', w: 'up', s: 'down' };
-  addEventListener('keydown', e => {
-    const d = keys[e.key];
-    if (!d || e.metaKey || e.ctrlKey || e.altKey) return;
-    e.preventDefault(); move(d);
-  });
-
-  let sx, sy;
-  const board = $('board');
-  board.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-  board.addEventListener('touchend', e => {
-    if (sx == null) return;
-    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
-    sx = null;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
-    move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
-  });
-
-  function reset() { els.forEach(el => el.remove()); els.clear(); start(); }
-  $('new').onclick = reset;
-  $('again').onclick = reset;
-  keepBtn.onclick = () => { keepPlaying = true; overlay.classList.remove('show'); };
-  undoBtn.onclick = undo;
-  addEventListener('resize', render);
-
-  start();
-})();
+const R=6,C=7,ord=[3,2,4,1,5,0,6],dirs=[[0,1],[1,0],[1,1],[1,-1]];
+let b,turn,over,level=3;
+const $=s=>document.querySelector(s),B=$('#board');
+const say=t=>$('#st').textContent=t;
+for(let c=0;c<C;c++){const col=document.createElement('button');col.className='col';col.setAttribute('aria-label','עמודה '+(c+1));col.onclick=()=>play(c);for(let r=0;r<R;r++){const s=document.createElement('span');s.className='cell';col.appendChild(s)}B.appendChild(col)}
+const cell=(r,c)=>B.children[c].children[r];
+function reset(){b=Array.from({length:R},()=>Array(C).fill(0));turn=1;over=false;document.querySelectorAll('.cell').forEach(x=>x.className='cell');say('התור שלך')}
+function drop(c,p){for(let r=R-1;r>=0;r--)if(!b[r][c]){b[r][c]=p;return r}}
+function win(p){for(let r=0;r<R;r++)for(let c=0;c<C;c++)for(const[d,e]of dirs){const cs=[];for(let k=0;k<4;k++){const y=r+d*k,x=c+e*k;if(y<0||y>=R||x<0||x>=C||b[y][x]!==p)break;cs.push([y,x])}if(cs.length==4)return cs}return null}
+function score(){let s=0;for(let r=0;r<R;r++){if(b[r][3]==2)s+=3;for(let c=0;c<C;c++)for(const[d,e]of dirs){let a=0,h=0,out=false;for(let k=0;k<4;k++){const y=r+d*k,x=c+e*k;if(y<0||y>=R||x<0||x>=C){out=true;break}const v=b[y][x];if(v==2)a++;else if(v==1)h++}if(out)continue;if(a&&!h)s+=a==3?5:a==2?2:0;else if(h&&!a)s-=h==3?6:h==2?2:0}}return s}
+function mm(d,a,be,mx){
+if(win(2))return 1e5+d;if(win(1))return -1e5-d;
+const ms=ord.filter(c=>!b[0][c]);if(!ms.length)return 0;if(!d)return score();
+let best=mx?-Infinity:Infinity;
+for(const c of ms){const r=drop(c,mx?2:1),v=mm(d-1,a,be,!mx);b[r][c]=0;
+if(mx){best=Math.max(best,v);a=Math.max(a,v)}else{best=Math.min(best,v);be=Math.min(be,v)}
+if(a>=be)break}
+return best}
+function ai(){const ms=ord.filter(c=>!b[0][c]);
+if(level==1&&Math.random()<.4)return ms[Math.random()*ms.length|0];
+let bc=ms[0],bv=-Infinity;
+for(const c of ms){const r=drop(c,2),v=mm(level-1,-Infinity,Infinity,false);b[r][c]=0;if(v>bv){bv=v;bc=c}}
+return bc}
+function move(c,p){const r=drop(c,p);cell(r,c).classList.add('p'+p);const w=win(p);
+if(w){over=true;w.forEach(([y,x])=>cell(y,x).classList.add('w'));say(p==1?'ניצחת! 🎉':'המחשב ניצח. רוצה לנסות שוב?')}
+else if(b[0].every(v=>v)){over=true;say('תיקו')}}
+function play(c){if(over||turn!=1||b[0][c])return;move(c,1);
+if(!over){turn=2;say('המחשב חושב…');setTimeout(()=>{move(ai(),2);if(!over){turn=1;say('התור שלך')}},400)}}
+$('#lv').onchange=e=>{level=+e.target.value;reset()};
+$('#nw').onclick=reset;
+reset();
 </script>
 </body>
 </html>
